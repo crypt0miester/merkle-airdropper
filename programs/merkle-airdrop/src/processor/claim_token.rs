@@ -8,8 +8,7 @@ use anchor_spl::{
 #[derive(Accounts)]
 #[instruction(root: [u8; 32], amount: u64, verification_data: Vec<u8>)]
 pub struct Claim<'info> {
-    /// Authority just needs to pay for the receipt rent. Does not actually have
-    /// to be the recipient.
+    /// Token claimer. 
     #[account(mut)]
     pub owner: Signer<'info>,
 
@@ -62,7 +61,7 @@ pub fn handle_claim(ctx: Context<Claim>, root: [u8; 32], amount: u64, verificati
         .expect("Invalid verification data");
     let verification_index: u64 = u64::from_le_bytes(verification_index_array);
 
-    msg!("Verification Data {:02X?}", verification_data);
+    // msg!("Verification Data {:02X?}", verification_data);
     msg!("Verification Data Length {}", verification_data.len());
     msg!("Amount {}", amount);
     msg!("Verification Index {}", verification_index);
@@ -84,7 +83,7 @@ pub fn handle_claim(ctx: Context<Claim>, root: [u8; 32], amount: u64, verificati
             .try_into()
             .expect("Invalid verification data");
         proof.push(next_hash);
-        msg!("Proof hash {:02X?}", next_hash);
+        // msg!("Proof hash {:02X?}", next_hash);
     }
 
     // This is the actual verification.

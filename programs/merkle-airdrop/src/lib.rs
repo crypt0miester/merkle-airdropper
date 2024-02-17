@@ -9,7 +9,7 @@ pub use crate::state::*;
 pub use crate::utils::*;
 pub use crate::errors::*;
 
-declare_id!("8BjdTzm1Q852B2FqJagx3aAqpmuTjF4hatTBn7uAXt7f");
+declare_id!("HjHfxeQKw3MKVae6W29YLEeFkohABygiY71Zq1J6FJsd");
 
 #[program]
 pub mod merkle_airdrop {
@@ -21,5 +21,9 @@ pub mod merkle_airdrop {
 
     pub fn init(ctx: Context<InitializeAirdropState>, root: [u8; 32], is_token_2022: bool) -> Result<()> {
         handle_init(ctx, root, is_token_2022)
+    }
+
+    pub fn withdraw_from_vault(ctx: Context<WithdrawTokensFromVault>, _root: [u8; 32]) -> Result<()> {
+        handle_withdraw_tokens_from_vault(ctx)
     }
 }

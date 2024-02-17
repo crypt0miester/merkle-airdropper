@@ -15,7 +15,12 @@ import {
   associatedAddress,
 } from "@coral-xyz/anchor/dist/cjs/utils/token";
 import { BN } from "bn.js";
-import { Keypair, PublicKey, SystemProgram } from "@solana/web3.js";
+import {
+  ComputeBudgetProgram,
+  Keypair,
+  PublicKey,
+  SystemProgram,
+} from "@solana/web3.js";
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   createAssociatedTokenAccountIdempotent,
@@ -58,6 +63,7 @@ async function main() {
   const amountsByRecipient = [];
   let totalAmount = 0;
   // expects to be a file of json with object [{ "account": publicKey, "amount": amount}]
+  // @ts-ignore
   for (const line of airdropData) {
     const { account, amount } = line;
     totalAmount += Number(amount);
@@ -145,23 +151,31 @@ async function main() {
     []
   );
   // index is the index of the account in the file
-  const index = 0;
+
+  const testAccount = claimorTestKeypair.publicKey;
+  const index = amountsByRecipient.findIndex(
+    (e) => e.account.toString() === testAccount.toString()
+  );
+  console.log('index of claimor', index);
   // merkle proof
   const proofStrings: Buffer[] = tree.getProof(
     index,
-    amountsByRecipient[0].account,
-    amountsByRecipient[0].amount
+    amountsByRecipient[index].account,
+    amountsByRecipient[index].amount
   );
   const proofBytes: number[][] = proofStrings.map((p) => toBytes32Array(p));
 
   let verificationData = Buffer.allocUnsafe(8);
   verificationData.writeBigUInt64LE(BigInt(index));
 
-  const testAccount = claimorTestKeypair.publicKey;
-
   // the receipt must be here since it is only the first 8 bytes rather than the complete data
   const [receipt, _receiptBump] = anchor.web3.PublicKey.findProgramAddressSync(
-    [Buffer.from("receipt"), airdropState.toBuffer(), testAccount.toBuffer(), verificationData],
+    [
+      Buffer.from("receipt"),
+      airdropState.toBuffer(),
+      testAccount.toBuffer(),
+      verificationData,
+    ],
     merkleAirdropProgram.programId
   );
 
@@ -171,12 +185,14 @@ async function main() {
       Buffer.from(proofElem),
     ]);
   }
-
-  // last transaction: Claim instruction 
+  const computeBudgetIx = ComputeBudgetProgram.setComputeUnitLimit({
+    units: 400_000,
+  });
+  // last transaction: Claim instruction
   const claimIxn = await merkleAirdropProgram.methods
     .claim(
       toBytes32Array(merkleRoot),
-      amountsByRecipient[0].amount,
+      amountsByRecipient[index].amount,
       verificationData
     )
     .accounts({
@@ -199,10 +215,34 @@ async function main() {
   const txClaim = new anchor.web3.Transaction({
     recentBlockhash: latestBlockHashClaim.blockhash,
   });
-  txClaim.add(claimIxn);
+  txClaim.add(...[computeBudgetIx, claimIxn]);
   await provider.sendAndConfirm(txClaim, [claimorTestKeypair]);
   console.log(merkleRoot);
   console.log(verificationData);
+
+  const withdrawIxn = await merkleAirdropProgram.methods
+    .withdrawFromVault(toBytes32Array(merkleRoot))
+    .accounts({
+      authority: provider.publicKey,
+      authorityMintAta: associatedAddress({
+        mint: tokenMint,
+        owner: provider.publicKey,
+      }),
+      tokenMint,
+      airdropState,
+      vault,
+      splTokenProgram: TOKEN_PROGRAM_ID,
+      ataProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+    })
+    .signers([claimorTestKeypair])
+    .instruction();
+
+  const latestBlockHashWithdraw = await connection.getLatestBlockhash();
+  const txWithdraw = new anchor.web3.Transaction({
+    recentBlockhash: latestBlockHashWithdraw.blockhash,
+  });
+  txWithdraw.add(withdrawIxn);
+  await provider.sendAndConfirm(txWithdraw, []);
 }
 
 main();

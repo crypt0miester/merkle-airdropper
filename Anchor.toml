@@ -5,7 +5,7 @@ seeds = true
 skip-lint = false
 
 [programs.devnet]
-merkle_airdrop = "8BjdTzm1Q852B2FqJagx3aAqpmuTjF4hatTBn7uAXt7f"
+merkle_airdrop = "HjHfxeQKw3MKVae6W29YLEeFkohABygiY71Zq1J6FJsd"
 
 [registry]
 url = "https://api.apr.dev"
