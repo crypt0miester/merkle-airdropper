@@ -21,7 +21,7 @@ Any loss of funds cannot is your own responsibility as this is a one day project
 all the data needed is in the app folder
 
 # How to use
-1. prepare list of accounts with amounts like in sample above. or like in [airdrop-data.json](blob/main/app/airdrop-data.json)
+1. prepare list of accounts with amounts like in sample above. or like in [airdrop-data.json](app/airdrop-data.json)
 2. create a balance tree and merkle root
 
 ```ts
