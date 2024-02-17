@@ -22,7 +22,7 @@ pub struct Claim<'info> {
 
     #[account(
         init,
-        seeds = ["receipt".as_ref(), owner.key().as_ref(), &verification_data[0..8]],
+        seeds = ["receipt".as_ref(), airdrop_state.key().as_ref(), owner.key().as_ref(), &verification_data[0..8]],
         bump,
         space = 8 + std::mem::size_of::<Receipt>(),
         payer = owner

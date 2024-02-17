@@ -161,7 +161,7 @@ async function main() {
 
   // the receipt must be here since it is only the first 8 bytes rather than the complete data
   const [receipt, _receiptBump] = anchor.web3.PublicKey.findProgramAddressSync(
-    [Buffer.from("receipt"), testAccount.toBuffer(), verificationData],
+    [Buffer.from("receipt"), airdropState.toBuffer(), testAccount.toBuffer(), verificationData],
     merkleAirdropProgram.programId
   );
 
