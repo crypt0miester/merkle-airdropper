@@ -151,7 +151,6 @@ async function main() {
     []
   );
   // index is the index of the account in the file
-
   const testAccount = claimorTestKeypair.publicKey;
   const index = amountsByRecipient.findIndex(
     (e) => e.account.toString() === testAccount.toString()
