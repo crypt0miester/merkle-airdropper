@@ -16,7 +16,7 @@ the amount must already be multplied by the decimal points for 6 mint decimals i
 
 Please test the code througouhly before running. 
 
-Any loss of funds cannot is your own responsibility as this is a one day project done without audits.
+Any loss of funds is your own responsibility as this is a one day project done without audits.
 
 all the data needed is in the app folder
 
