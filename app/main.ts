@@ -30,7 +30,7 @@ import {
 } from "@solana/spl-token";
 import dotenv from "dotenv";
 dotenv.config();
-import airdropData from "./airdrop-data.json";
+import airdropData from "./amounts.json";
 import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 
 const CLAIMOR_KEY = process.env.KEY;
@@ -66,13 +66,14 @@ async function main() {
   // @ts-ignore
   for (const line of airdropData) {
     const { account, amount } = line;
-    totalAmount += Number(amount);
+    totalAmount += Number(amount );
     amountsByRecipient.push({
       account: new PublicKey(account),
       // the amount must be multiplied by decimal points
-      amount: new anchor.BN(Number(amount)),
+      amount: new anchor.BN(Number(amount * Math.pow(10,6))),
     });
   }
+  console.log({totalAmount})
   // balance tree of the airdrop data
   const tree = new BalanceTree(amountsByRecipient);
   // merkle root tree
@@ -101,7 +102,8 @@ async function main() {
   tx.add(initIx);
   await provider.sendAndConfirm(tx, []);
 
-  const airdropAmount = new anchor.BN(1_000_000 * 1_000_000);
+  const airdropAmount = new anchor.BN(totalAmount* Math.pow(10,6));
+  console.log({airdropAmount})
   const airdropAta = associatedAddress({
     mint: tokenMint,
     owner: provider.publicKey,
@@ -150,12 +152,16 @@ async function main() {
     airdropAmount.toNumber(),
     []
   );
+
   // index is the index of the account in the file
   const testAccount = claimorTestKeypair.publicKey;
   const index = amountsByRecipient.findIndex(
     (e) => e.account.toString() === testAccount.toString()
   );
+  console.log(claimorTestKeypair.publicKey)
   console.log('index of claimor', index);
+
+//  return
   // merkle proof
   const proofStrings: Buffer[] = tree.getProof(
     index,
@@ -201,6 +207,7 @@ async function main() {
         owner: testAccount,
       }),
       tokenMint,
+      treasury: new PublicKey("HF3CBT9JFfgN3S61JWAduB8mT2SmsgtRihFZvnyvjQQK"),
       receipt,
       airdropState,
       vault,

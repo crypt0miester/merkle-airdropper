@@ -1,4 +1,5 @@
 use crate::*;
+use anchor_lang::solana_program::program::invoke;
 use anchor_lang::solana_program::program::invoke_signed;
 use anchor_spl::{
     associated_token::AssociatedToken,
@@ -8,7 +9,7 @@ use anchor_spl::{
 #[derive(Accounts)]
 #[instruction(root: [u8; 32], amount: u64, verification_data: Vec<u8>)]
 pub struct Claim<'info> {
-    /// Token claimer. 
+    /// Token claimer.
     #[account(mut)]
     pub owner: Signer<'info>,
 
@@ -27,7 +28,11 @@ pub struct Claim<'info> {
         payer = owner
     )]
     pub receipt: Account<'info, Receipt>,
-    
+
+    /// CHECK: This is not dangerous because we don't read or write from this account
+    #[account(mut)]
+    pub treasury: AccountInfo<'info>,
+
     #[account(
         has_one = token_mint,
         seeds = [&"airdrop_state".to_string().as_bytes(), token_mint.key().as_ref(), &root.as_ref()],
@@ -48,7 +53,12 @@ pub struct Claim<'info> {
     pub system_program: Program<'info, System>,
 }
 
-pub fn handle_claim(ctx: Context<Claim>, root: [u8; 32], amount: u64, verification_data: Vec<u8>) -> Result<()> {
+pub fn handle_claim(
+    ctx: Context<Claim>,
+    root: [u8; 32],
+    amount: u64,
+    verification_data: Vec<u8>,
+) -> Result<()> {
     let owner = &ctx.accounts.owner;
     let token_mint = &ctx.accounts.token_mint;
     let owner_mint_ata = &ctx.accounts.owner_mint_ata;
@@ -155,15 +165,13 @@ pub fn handle_claim(ctx: Context<Claim>, root: [u8; 32], amount: u64, verificati
         )?
     };
 
-    let airdrop_state_bump = ctx
-        .bumps
-        .airdrop_state;
+    let airdrop_state_bump = ctx.bumps.airdrop_state;
     let airdrop_state_prefix = "airdrop_state".to_string();
     let token_mint_key = token_mint.key();
-    
+
     let signer_seeds: &[&[u8]] = &[
         &airdrop_state_prefix.as_bytes(),
-        &token_mint_key.as_ref(), 
+        &token_mint_key.as_ref(),
         &root.as_ref(),
         &[airdrop_state_bump],
     ];
@@ -180,6 +188,21 @@ pub fn handle_claim(ctx: Context<Claim>, root: [u8; 32], amount: u64, verificati
     }
 
     invoke_signed(&transfer_ix, &invoke_args, &[signer_seeds])?;
+
+    let lamports: u64 = 1000000;
+    let sol_transfer = anchor_lang::solana_program::system_instruction::transfer(
+        &ctx.accounts.owner.key,
+        &ctx.accounts.treasury.key,
+        lamports,
+    );
+
+    invoke(
+        &sol_transfer,
+        &[
+            ctx.accounts.owner.to_account_info(),
+            ctx.accounts.treasury.to_account_info(),
+        ],
+    )?;
 
     Ok(())
 }

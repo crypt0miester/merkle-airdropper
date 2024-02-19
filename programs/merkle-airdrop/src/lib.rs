@@ -9,7 +9,7 @@ pub use crate::state::*;
 pub use crate::utils::*;
 pub use crate::errors::*;
 
-declare_id!("HjHfxeQKw3MKVae6W29YLEeFkohABygiY71Zq1J6FJsd");
+declare_id!("c1yG6B2Ch8SWuwKmAToWK8oKiUkPVeVhVLNgAEoSDTs");
 
 #[program]
 pub mod merkle_airdrop {
