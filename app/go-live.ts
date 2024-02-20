@@ -24,7 +24,7 @@ import { BalanceTree } from "./utils/balance_tree";
 dotenv.config();
 
 const CLAIMOR_KEY = process.env.KEY;
-const RPC_URL = "https://holy-winter-asphalt.solana-mainnet.quiknode.pro/d3ddeddcfc8f29525f539e36b5fdde94747054db/";//process.env.RPC_URL;
+const RPC_URL = process.env.RPC_URL;
 
 const claimorTestKeypair = Keypair.fromSecretKey(bs58.decode(CLAIMOR_KEY));
 async function main() {
