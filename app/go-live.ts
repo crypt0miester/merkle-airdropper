@@ -1,46 +1,36 @@
 import * as anchor from "@coral-xyz/anchor";
-import { Program, Provider } from "@coral-xyz/anchor";
-import assert from "assert";
-import { MerkleAirdrop } from "../target/types/merkle_airdrop";
-import { BalanceTree } from "./utils/balance_tree";
-import {
-  createMint,
-  createTokenAccount,
-  mintToAccount,
-  toBeBytes,
-  toBytes32Array,
-} from "./utils";
+import { Program } from "@coral-xyz/anchor";
+import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 import {
   TOKEN_PROGRAM_ID,
   associatedAddress,
 } from "@coral-xyz/anchor/dist/cjs/utils/token";
-import { BN } from "bn.js";
+import {
+  ASSOCIATED_TOKEN_PROGRAM_ID,
+  createAssociatedTokenAccountIdempotentInstruction,
+  transfer,
+} from "@solana/spl-token";
 import {
   ComputeBudgetProgram,
   Keypair,
   PublicKey,
   SystemProgram,
 } from "@solana/web3.js";
-import {
-  ASSOCIATED_TOKEN_PROGRAM_ID,
-  createAssociatedTokenAccountIdempotent,
-  createAssociatedTokenAccountIdempotentInstruction,
-  createAssociatedTokenAccountInstruction,
-  transfer,
-} from "@solana/spl-token";
 import dotenv from "dotenv";
-dotenv.config();
+import { MerkleAirdrop } from "../target/types/merkle_airdrop";
 import airdropData from "./amounts.json";
-import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
+import { mintToAccount, toBytes32Array } from "./utils";
+import { BalanceTree } from "./utils/balance_tree";
+dotenv.config();
 
 const CLAIMOR_KEY = process.env.KEY;
-const RPC_URL = process.env.RPC_URL;
+const RPC_URL = "https://holy-winter-asphalt.solana-mainnet.quiknode.pro/d3ddeddcfc8f29525f539e36b5fdde94747054db/";//process.env.RPC_URL;
+
 const claimorTestKeypair = Keypair.fromSecretKey(bs58.decode(CLAIMOR_KEY));
 async function main() {
-  const connection = new anchor.web3.Connection(
-    RPC_URL,
-    { commitment: "finalized" }
-  );
+  const connection = new anchor.web3.Connection(RPC_URL, {
+    commitment: "finalized",
+  });
   const wallet = anchor.Wallet.local();
 
   const provider = new anchor.AnchorProvider(connection, wallet, {
@@ -50,17 +40,8 @@ async function main() {
   });
   const merkleAirdropProgram = anchor.workspace
     .MerkleAirdrop as Program<MerkleAirdrop>;
-
-  // create mint usually the value is already there unless you are testing
-  /*const tokenMint = await createMint(
-    provider,
-    provider.publicKey,
-    TOKEN_PROGRAM_ID
-  );
-  */
-
   const tokenMint = new PublicKey(
-    "LGNDWdLatceN2Td6yK6kA9A34HF489ZJ3RR6n7QqUxG"
+    "LGNDeXXXaDDeRerwwHfUtPBNz5s6vrn1NMSt9hdaCwx"
   );
   console.log("tokenMint", tokenMint.toString());
 
@@ -78,9 +59,7 @@ async function main() {
     });
   }
   console.log({ totalAmount });
-  // balance tree of the airdrop data
   const tree = new BalanceTree(amountsByRecipient);
-  // merkle root tree
   const merkleRoot = tree.getRoot();
 
   const [airdropState, _stateBump] =
@@ -88,7 +67,7 @@ async function main() {
       [Buffer.from("airdrop_state"), tokenMint.toBuffer(), merkleRoot],
       merkleAirdropProgram.programId
     );
-  // first txn: Initialize airdrop
+  console.log("Initialize merkle tree & airdropState");
   const initIx = await merkleAirdropProgram.methods
     .init(toBytes32Array(merkleRoot), false)
     .accounts({
@@ -105,9 +84,12 @@ async function main() {
   });
   tx.add(initIx);
   try {
-    //  await provider.sendAndConfirm(tx, []);
+    await provider.sendAndConfirm(tx, []);
+    console.log("init success");
   } catch (e) {
+    console.log("init failed. Maybe it exists already?");
     console.log(e);
+    process.exit()
   }
   const airdropAmount = new anchor.BN(totalAmount);
   console.log({ airdropAmount });
@@ -117,7 +99,7 @@ async function main() {
   });
 
   try {
-    // second txn: mint tokens (for testing) airdrop
+    console.log("minting tokens");
     await mintToAccount(
       provider,
       tokenMint,
@@ -133,7 +115,8 @@ async function main() {
       )
     );
   } catch (e) {
-    console.log(e);
+    console.log("mint failed. Maybe it exists already?");
+    //    console.log(e);
   }
 
   const vault = associatedAddress({ mint: tokenMint, owner: airdropState });
@@ -145,23 +128,24 @@ async function main() {
   });
 
   try {
-    /*
-  txAta.add(
-    createAssociatedTokenAccountIdempotentInstruction(
-      provider.publicKey, // payer
-      vault, // owner associated token account
-      airdropState, // token ata owner
-      tokenMint // mint account
-    )
-  );
-    */
-    //   await provider.sendAndConfirm(txAta, []);
+    console.log("creating ATA for vault");
+    console.log(vault.toString());
+    txAta.add(
+      createAssociatedTokenAccountIdempotentInstruction(
+        provider.publicKey, // payer
+        vault, // owner associated token account
+        airdropState, // token ata owner
+        tokenMint // mint account
+      )
+    );
+    await provider.sendAndConfirm(txAta, []);
   } catch (e) {
     console.log(e);
   }
 
   try {
     // fourth txn: transfer tokens from mint authority (for testing) airdrop
+    console.log("transferring tokens");
     await transfer(
       connection,
       wallet.payer,
@@ -172,7 +156,8 @@ async function main() {
       []
     );
   } catch (e) {
-    console.log(e);
+    console.log("transfer failed. Maybe not allowed?");
+    //    console.log(e);
   }
 
   // index is the index of the account in the file

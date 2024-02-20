@@ -1,4 +1,7 @@
 
+app/**/*.js
+tests/*.js
+deploy-key.json
 .anchor
 .DS_Store
 target

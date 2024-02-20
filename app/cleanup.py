@@ -22,13 +22,12 @@ def is_valid_solana_address(address):
 sum = 0
 valid_accounts = []
 
-# Update the amount by adding 9 decimals
 for item in data:
     try:
         if is_valid_solana_address(item['account']):
             # Assuming the original amount is in lamports and you want to convert it to SOL (1 SOL = 1 billion lamports)
             sum += item['amount']
-            item['amount'] = item['amount'] # * 10**9 # Adding 9 decimals
+            item['amount'] = item['amount']
 
             try: 
                 claimed = item['claimed']

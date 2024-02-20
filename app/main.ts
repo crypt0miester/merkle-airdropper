@@ -56,7 +56,7 @@ async function main() {
   //     TOKEN_PROGRAM_ID
   //   );
   const tokenMint = new PublicKey(
-    "BPKQUocKVQ4dkUjcy88UpHATQziZnWNDoysjTzFiLA3u"
+    "2LgNBB7sNcGnGegNkWkstZhQD1y262PcYqueew1yZgt4"
   );
   console.log("tokenMint", tokenMint.toString());
 
