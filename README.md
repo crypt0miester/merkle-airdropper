@@ -1,8 +1,8 @@
-# Merkle Airdropper
+# Merkle Airdropper V2
 
 Airdrops tokens based on pre computed data. the data would then be computed in a Merkle Root.
 
-The merkle root is the source of data validity, the frontend must have the .json file to make sure that the account matches and the amount also matches. and the verification when claiming will work. otherwise it will fail since the node does not exist.
+The merkle root is the source of data validity, the frontend must have the .json file to make sure that the account matches and the amount also matches. and the verification when claiming will work. otherwise it will fail since the leaf does not exist.
 
 sample: 
 ```json
@@ -23,6 +23,8 @@ all the data needed is in the app folder
 # How to use
 1. prepare list of accounts with amounts like in sample above. or like in [airdrop-data.json](app/airdrop-data.json)
 2. create a balance tree and merkle root
+
+checkout tests/merkle-airdrop.ts to know how everything works.
 
 ```ts
   const amountsByRecipient = [];
@@ -99,8 +101,9 @@ all the data needed is in the app folder
       verificationData
     )
     .accounts({
-      owner: testAccount,
-      ownerMintAta: associatedAddress({
+      payer: testAccount, // can be anyone
+      recipient: testAccount,
+      recipientMintAta: associatedAddress({
         mint: tokenMint,
         owner: testAccount,
       }),
@@ -111,7 +114,7 @@ all the data needed is in the app folder
       splTokenProgram: TOKEN_PROGRAM_ID,
       ataProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
     })
-    .signers([claimorTestKeypair])
+    .signers([testAccountKeypair])
     .instruction();
 ```
 

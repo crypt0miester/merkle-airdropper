@@ -27,7 +27,6 @@ async function createMintInstructions(
     .initializeMint(DEFAULT_MINT_DECIMALS, authority, authority)
     .accounts({
       mint: mint,
-      rent: SYSVAR_RENT_PUBKEY,
     })
     .instruction();
 

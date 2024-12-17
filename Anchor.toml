@@ -1,18 +1,10 @@
-[toolchain]
+[programs.localnet]
+merkle_airdrop = "6ejWDiN63M19QaDAwEMw9kWNLrMbmL9SbecY5MejCT8Y"
 
-[features]
-seeds = true
-skip-lint = false
-
-[programs.devnet]
-merkle_airdrop = "HjHfxeQKw3MKVae6W29YLEeFkohABygiY71Zq1J6FJsd"
-
-[registry]
-url = "https://api.apr.dev"
 
 [provider]
-cluster = "devnet"
-wallet = "/home/k/.config/solana/id.json"
+cluster = "localnet"
+wallet = "~/.config/solana/id.json"
 
 [scripts]
 test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"

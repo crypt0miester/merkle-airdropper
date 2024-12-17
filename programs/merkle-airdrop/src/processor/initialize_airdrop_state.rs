@@ -25,11 +25,10 @@ pub struct InitializeAirdropState<'info> {
     pub system_program: Program<'info, System>,
 }
 
-pub fn handle_init(ctx: Context<InitializeAirdropState>, root: [u8; 32], is_token_2022: bool) -> Result<()> {
+pub fn handle_init(ctx: Context<InitializeAirdropState>, root: [u8; 32]) -> Result<()> {
     ctx.accounts.airdrop_state.root = root;
     ctx.accounts.airdrop_state.authority = ctx.accounts.authority.key();
     ctx.accounts.airdrop_state.token_mint = ctx.accounts.token_mint.key();
-    ctx.accounts.airdrop_state.is_token_2022 = is_token_2022;
-    
+
     Ok(())
 }
